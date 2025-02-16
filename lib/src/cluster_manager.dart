@@ -122,8 +122,22 @@ class ClusterManager<T extends ClusterItem> {
     }
 
     List<T> visibleItems = items.where((i) {
-      return inflatedBounds.contains(i.location);
-    }).toList();
+  double lat = i.location.latitude;
+  double lng = i.location.longitude;
+
+  bool withinLat = (lat >= inflatedBounds.southwest.latitude &&
+      lat <= inflatedBounds.northeast.latitude);
+
+  bool withinLng = false;
+  if (inflatedBounds.southwest.longitude > inflatedBounds.northeast.longitude) {
+    // ✅ Handles crossing the International Date Line
+    withinLng = (lng >= inflatedBounds.southwest.longitude || lng <= inflatedBounds.northeast.longitude);
+  } else {
+    withinLng = (lng >= inflatedBounds.southwest.longitude && lng <= inflatedBounds.northeast.longitude);
+  }
+
+  return withinLat && withinLng;
+}).toList();
 
     if (stopClusteringZoom != null && _zoom >= stopClusteringZoom!)
       return visibleItems.map((i) => Cluster<T>.fromItems([i])).toList();
