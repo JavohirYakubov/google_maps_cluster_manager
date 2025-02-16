@@ -197,23 +197,24 @@ class ClusterManager<T extends ClusterItem> {
     return scanner.run(inputItems, _getZoomLevel(zoom));
   }
 
-  List<Cluster<T>> _computeClusters(
-      List<T> inputItems, List<Cluster<T>> markerItems,
-      {int level = 5}) {
-    if (inputItems.isEmpty) return markerItems;
-    String nextGeohash = inputItems[0].geohash.substring(0, level);
+List<Cluster<T>> _computeClusters(List<T> inputItems, List<Cluster<T>> markerItems, {int level = 5}) {
+  if (inputItems.isEmpty) return markerItems;
 
-    List<T> items = inputItems
-        .where((p) => p.geohash.substring(0, level) == nextGeohash)
-        .toList();
-
-    markerItems.add(Cluster<T>.fromItems(items));
-
-    List<T> newInputList = List.from(
-        inputItems.where((i) => i.geohash.substring(0, level) != nextGeohash));
-
-    return _computeClusters(newInputList, markerItems, level: level);
+  // Group items by geohash level
+  Map<String, List<T>> clustersMap = {};
+  for (var item in inputItems) {
+    String hash = item.geohash.substring(0, level);
+    clustersMap.putIfAbsent(hash, () => []).add(item);
   }
+
+  for (var entry in clustersMap.entries) {
+    Cluster<T> cluster = Cluster<T>.fromItems(entry.value);
+    markerItems.add(cluster);
+  }
+
+  return markerItems;
+}
+
 
   static Future<Marker> Function(Cluster) get _basicMarkerBuilder =>
       (cluster) async {
